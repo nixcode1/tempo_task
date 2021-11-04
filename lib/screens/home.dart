@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tempo_task/models/employee_model.dart';
+import 'package:tempo_task/widgets/employee_tile.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -12,6 +13,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  List<Employee> listOfEmployees = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -25,7 +28,7 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: const Color(0xfffefefe),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(
             statusBarColor: Color(0xffffffff),
@@ -36,7 +39,7 @@ class _HomeState extends State<Home> {
         titleTextStyle: const TextStyle(color: Colors.black, fontSize: 18),
         centerTitle: true,
         leading: const Icon(Icons.menu, color: Colors.black, size: 35),
-        backgroundColor: const Color(0xfffefefe),
+        backgroundColor: Colors.white,
         elevation: 1,
       ),
       body: SizedBox.expand(
@@ -63,23 +66,30 @@ class _HomeState extends State<Home> {
                 height: size.height * 0.06,
                 child: TextField(
                   decoration: InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30)
-                    ),
-                    hintText: "Search Employee",
-                    suffixIcon: Icon(Icons.search, color: Colors.black,)
-                  ),
-                  
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 20),
+                      border: OutlineInputBorder(
+                          borderSide: BorderSide(width: 0.04, color: Colors.black54),
+                          borderRadius: BorderRadius.circular(30)),
+                      hintText: "Search Employee",
+                      suffixIcon: const Icon(
+                        Icons.search,
+                        color: Colors.black,
+                      )),
                 ),
               ),
-              SizedBox(height: size.height * 0.05),
+              SizedBox(height: size.height * 0.03),
               Expanded(
-                child: ListView.builder(
-                  itemCount: 100,
-                  itemBuilder: (context, index) => FlutterLogo(),
-                )
-              )
+                  child: isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : ListView.builder(
+                          itemCount: listOfEmployees.length,
+                          itemBuilder: (context, index) => EmployeeTile(
+                            employee: listOfEmployees[index],
+                          ),
+                        ))
             ],
           ),
         ),
@@ -90,8 +100,11 @@ class _HomeState extends State<Home> {
   void readAndParseJson() async {
     String data = await getJsonData();
     List<dynamic> decodedData = jsonDecode(data);
-    List<Employee> listOfEmployees = decodedData.map((e) => Employee.fromMap(e)).toList();
-    debugPrint("$listOfEmployees");
+    listOfEmployees = decodedData.map((e) => Employee.fromMap(e)).toList();
+    setState(() {
+      isLoading = false;
+    });
+    // debugPrint("$listOfEmployees");
   }
 
   Future<String> getJsonData() async {
