@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:azlistview/azlistview.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:tempo_task/models/employee_model.dart';
 import 'package:tempo_task/widgets/employee_tile.dart';
@@ -15,6 +17,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<Employee> listOfEmployees = [];
+  List<Employee> searchList = [];
   bool isLoading = true;
 
   @override
@@ -28,6 +31,9 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    bool isKeyboardVisible =
+        MediaQuery.of(context).viewInsets.bottom > size.height * 0.3;
+    debugPrint("$isKeyboardVisible");
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -66,6 +72,7 @@ class _HomeState extends State<Home> {
               SizedBox(
                 height: size.height * 0.06,
                 child: TextField(
+                  onChanged: _search,
                   decoration: InputDecoration(
                       contentPadding:
                           const EdgeInsets.symmetric(horizontal: 20),
@@ -86,16 +93,36 @@ class _HomeState extends State<Home> {
                     ? const Center(
                         child: CircularProgressIndicator(),
                       )
-                    : AzListView(
-                        data: listOfEmployees,
-                        indexBarData:
-                            SuspensionUtil.getTagIndexList(listOfEmployees),
-                            
-                        
-                        itemCount: listOfEmployees.length,
-                        itemBuilder: (context, index) =>
-                            EmployeeTile(employee: listOfEmployees[index]),
-                      ),
+                    : isKeyboardVisible
+                        ? ListView.builder(
+                            itemCount: searchList.length,
+                            itemBuilder: (context, index) =>
+                                EmployeeTile(employee: searchList[index]),
+                          )
+                        : AzListView(
+                            data: listOfEmployees,
+                            indexBarHeight: size.height,
+                            indexBarItemHeight: 23,
+                            indexBarAlignment: Alignment.topRight,
+                            indexBarOptions: const IndexBarOptions(
+                                needRebuild: true,
+                                selectTextStyle: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                                downTextStyle: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                                textStyle: TextStyle(
+                                    color: Colors.black54,
+                                    fontWeight: FontWeight.bold)),
+                            indexBarData:
+                                SuspensionUtil.getTagIndexList(listOfEmployees),
+                            itemCount: listOfEmployees.length,
+                            itemBuilder: (context, index) =>
+                                EmployeeTile(employee: listOfEmployees[index]),
+                          ),
               )
               //  ListView.builder(
               //     itemCount: listOfEmployees.length,
@@ -109,8 +136,6 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
-  
 
   void readAndParseJson() async {
     String data = await getJsonData();
@@ -143,5 +168,14 @@ class _HomeState extends State<Home> {
     setState(() {
       isLoading = false;
     });
+  }
+
+  void _search(String searchValue) {
+    searchList = listOfEmployees
+        .where((element) =>
+            element.firstName.toLowerCase().contains(searchValue) ||
+            element.lastName.toLowerCase().contains(searchValue))
+        .toList();
+    setState(() {});
   }
 }
