@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:azlistview/azlistview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tempo_task/models/employee_model.dart';
@@ -69,7 +70,8 @@ class _HomeState extends State<Home> {
                       contentPadding:
                           const EdgeInsets.symmetric(horizontal: 20),
                       border: OutlineInputBorder(
-                          borderSide: BorderSide(width: 0.04, color: Colors.black54),
+                          borderSide:
+                              BorderSide(width: 0.04, color: Colors.black54),
                           borderRadius: BorderRadius.circular(30)),
                       hintText: "Search Employee",
                       suffixIcon: const Icon(
@@ -80,16 +82,27 @@ class _HomeState extends State<Home> {
               ),
               SizedBox(height: size.height * 0.03),
               Expanded(
-                  child: isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : ListView.builder(
-                          itemCount: listOfEmployees.length,
-                          itemBuilder: (context, index) => EmployeeTile(
-                            employee: listOfEmployees[index],
-                          ),
-                        ))
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : AzListView(
+                        data: listOfEmployees,
+                        indexBarData:
+                            SuspensionUtil.getTagIndexList(listOfEmployees),
+                            
+                        
+                        itemCount: listOfEmployees.length,
+                        itemBuilder: (context, index) =>
+                            EmployeeTile(employee: listOfEmployees[index]),
+                      ),
+              )
+              //  ListView.builder(
+              //     itemCount: listOfEmployees.length,
+              //     itemBuilder: (context, index) => EmployeeTile(
+              //       employee: listOfEmployees[index],
+              //     ),
+              //   ))
             ],
           ),
         ),
@@ -97,17 +110,38 @@ class _HomeState extends State<Home> {
     );
   }
 
+  
+
   void readAndParseJson() async {
     String data = await getJsonData();
     List<dynamic> decodedData = jsonDecode(data);
     listOfEmployees = decodedData.map((e) => Employee.fromMap(e)).toList();
-    setState(() {
-      isLoading = false;
-    });
+    _handleList(listOfEmployees);
     // debugPrint("$listOfEmployees");
   }
 
   Future<String> getJsonData() async {
     return await rootBundle.loadString('assets/employees.json');
+  }
+
+  void _handleList(List<Employee> list) {
+    if (list.isEmpty) return;
+    for (int i = 0, length = list.length; i < length; i++) {
+      String tag = list[i].firstName.substring(0, 1).toUpperCase();
+      if (RegExp("[A-Z]").hasMatch(tag)) {
+        list[i].tagIndex = tag;
+      } else {
+        list[i].tagIndex = "#";
+      }
+    }
+    // A-Z sort.
+    SuspensionUtil.sortListBySuspensionTag(list);
+
+    // show sus tag.
+    SuspensionUtil.setShowSuspensionStatus(list);
+
+    setState(() {
+      isLoading = false;
+    });
   }
 }

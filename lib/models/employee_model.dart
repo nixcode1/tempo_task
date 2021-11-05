@@ -1,10 +1,11 @@
 import 'dart:convert';
 
+import 'package:azlistview/azlistview.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:intl/intl.dart';
 
-class Employee {
+class Employee extends ISuspensionBean{
   final int id;
   final String imageUrl;
   final String firstName;
@@ -13,11 +14,13 @@ class Employee {
   final String contactNumber;
   final int age;
   final DateTime dob;
+  String? tagIndex;
   final double salary;
   final String address;
   
   Employee({
     required this.id,
+    this.tagIndex,
     required this.imageUrl,
     required this.firstName,
     required this.lastName,
@@ -68,4 +71,7 @@ class Employee {
   String toString() {
     return 'Employee(id: $id, imageUrl: $imageUrl, firstName: $firstName, lastName: $lastName, email: $email, contactNumber: $contactNumber, age: $age, dob: $dob, salary: $salary, address: $address)';
   }
+
+  @override
+  String getSuspensionTag() => tagIndex!;
 }
