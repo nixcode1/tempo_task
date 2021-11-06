@@ -2,11 +2,36 @@ import 'dart:convert';
 
 import 'package:azlistview/azlistview.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:tempo_task/models/employee_model.dart';
 import 'package:tempo_task/widgets/employee_tile.dart';
+
+List<Employee> isolatetask(String data) {
+  List<dynamic> decodedData = jsonDecode(data);
+  List<Employee> list = decodedData.map((e) => Employee.fromMap(e)).toList();
+  handleList(list);
+  return list;
+}
+
+void handleList(List<Employee> list) {
+  if (list.isEmpty) return;
+  for (int i = 0, length = list.length; i < length; i++) {
+    String tag = list[i].firstName.substring(0, 1).toUpperCase();
+    if (RegExp("[A-Z]").hasMatch(tag)) {
+      list[i].tagIndex = tag;
+    } else {
+      list[i].tagIndex = "#";
+    }
+  }
+  // A-Z sort.
+  SuspensionUtil.sortListBySuspensionTag(list);
+
+  // show sus tag.
+  SuspensionUtil.setShowSuspensionStatus(list);
+}
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -139,35 +164,15 @@ class _HomeState extends State<Home> {
 
   void readAndParseJson() async {
     String data = await getJsonData();
-    List<dynamic> decodedData = jsonDecode(data);
-    listOfEmployees = decodedData.map((e) => Employee.fromMap(e)).toList();
-    _handleList(listOfEmployees);
-    // debugPrint("$listOfEmployees");
+    listOfEmployees = await compute(isolatetask, data);
+    setState(() {
+      isLoading = false;
+    });
+// debugPrint("$listOfEmployees");
   }
 
   Future<String> getJsonData() async {
     return await rootBundle.loadString('assets/employees.json');
-  }
-
-  void _handleList(List<Employee> list) {
-    if (list.isEmpty) return;
-    for (int i = 0, length = list.length; i < length; i++) {
-      String tag = list[i].firstName.substring(0, 1).toUpperCase();
-      if (RegExp("[A-Z]").hasMatch(tag)) {
-        list[i].tagIndex = tag;
-      } else {
-        list[i].tagIndex = "#";
-      }
-    }
-    // A-Z sort.
-    SuspensionUtil.sortListBySuspensionTag(list);
-
-    // show sus tag.
-    SuspensionUtil.setShowSuspensionStatus(list);
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
   void _search(String searchValue) {
